@@ -1,0 +1,20 @@
+{
+    "name": "ramiroestrella/sendgrid-campaigns-sdk",
+    "description": "Sendgrid campaigns SDK",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "SendgridCampaign\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ramiro Estrella",
+            "email": "ramiro.estrellac@gmail.com"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.10"
+    }
+}
