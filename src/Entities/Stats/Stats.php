@@ -13,20 +13,62 @@ use SendgridCampaign\Entities\Stats\Enums\AbPhaseType;
 use SendgridCampaign\Entities\Stats\Enums\AggregatedByType;
 use SendgridCampaign\Entities\Stats\Enums\GroupByType;
 
+/**
+ * SendGrid Campaign Statistics Entity
+ * 
+ * This class provides access to email campaign performance metrics and
+ * statistics. Use it to analyze campaign effectiveness and track engagement.
+ * 
+ * Available metrics:
+ * - Delivery: requests, delivered, bounces, bounce_drops
+ * - Engagement: opens, unique_opens, clicks, unique_clicks
+ * - Issues: spam_reports, unsubscribes, invalid_emails
+ * 
+ * Aggregation options:
+ * - By day, week, or month
+ * - By A/B test phase
+ * - By individual send ID
+ * 
+ * Link tracking:
+ * - Click counts per link
+ * - Unique clicks per link
+ * 
+ * @package SendgridCampaign\Entities\Stats
+ * @see https://docs.sendgrid.com/api-reference/single-sends/get-all-single-send-stats
+ * 
+ * @example
+ * $stats = new Stats('your-api-key');
+ * 
+ * // Get stats for a specific campaign
+ * $campaignStats = $stats->getBySingleSendId('campaign-uuid');
+ * 
+ * // Get all campaign stats aggregated by month
+ * $monthlyStats = $stats->getAll(aggregatedBy: AggregatedByType::MONTH);
+ */
 class Stats extends BaseEntity
 {
     const BASE_ENDPOINT = 'marketing/stats/singlesends';
 
     /**
-     * Summary of getById
-     * @param string $singleSendId
-     * @param AggregatedByType|null $aggregatedBy
-     * @param string|null $startDate
-     * @param string|null $endDate
-     * @param string|null $timezone
-     * @param int|null $pageSize
-     * @param string|null $pageToken
-     * @param GroupByType[]|null $groupBy
+     * Retrieves statistics for a specific single send campaign.
+     * 
+     * Returns detailed metrics for the specified campaign, with options to
+     * aggregate and group results. Useful for analyzing individual campaign
+     * performance and engagement trends.
+     * @param string $singleSendId The ID of the single send campaign to retrieve stats for.
+     * @param AggregatedByType|null $aggregatedBy How to aggregate results:
+     *        - DAY: Daily breakdown
+     *        - WEEK: Weekly breakdown
+     *        - MONTH: Monthly breakdown
+     *        Default: Total (no time breakdown)
+     * @param string|null $startDate Start date for stats in YYYY-MM-DD format. Defaults to 30 days ago.
+     * @param string|null $endDate End date for stats in YYYY-MM-DD format. Defaults to today.
+     * @param string|null $timezone Timezone for date-based aggregation (e.g., 'UTC', 'America/New_York'). Defaults to UTC.
+     * @param int|null $pageSize Number of results per page for paginated responses. Default: 100.
+     * @param string|null $pageToken Token for pagination. Use the token from the previous response to get the next page.
+     * @param GroupByType[]|null $groupBy How to group results:
+     *        - SINGLESEND: Group by individual campaign
+     *        Default: All data combined
      * @return BaseDTO<StatsDTO>|BaseErrorDTO
      */
     public function getById(
@@ -61,10 +103,46 @@ class Stats extends BaseEntity
     }
 
     /**
-     * @param string[]|null $singlesendIds
-     * @param int|null $pageSize
-     * @param string|null $pageToken
-     * @return BaseListDto<StatsDTO>|BaseErrorDTO
+     * Retrieves statistics for all single send campaigns.
+     * 
+     * Returns aggregated metrics for all your campaigns within the specified
+     * time range. Results can be grouped and aggregated in various ways.
+     * 
+     * @param string|null $startDate Start date for stats in YYYY-MM-DD format.
+     *                               Defaults to 30 days ago.
+     * @param string|null $endDate End date for stats in YYYY-MM-DD format.
+     *                             Defaults to today.
+     * @param AggregatedByType|null $aggregatedBy How to aggregate results:
+     *        - DAY: Daily breakdown
+     *        - WEEK: Weekly breakdown
+     *        - MONTH: Monthly breakdown
+     *        Default: Total (no time breakdown)
+     * @param GroupByType|null $groupBy How to group results:
+     *        - SINGLESEND: Group by individual campaign
+     *        Default: All campaigns combined
+     * 
+     * @return StatsDTO|BaseErrorDTO Returns statistics data containing metrics
+     *         like opens, clicks, bounces, etc., or BaseErrorDTO on failure.
+     * 
+     * @see https://docs.sendgrid.com/api-reference/single-sends/get-all-single-send-stats
+     * 
+     * @example
+     * // Get all stats for the last 30 days
+     * $stats = $entity->getAll();
+     * 
+     * // Get monthly stats for a specific period
+     * $stats = $entity->getAll(
+     *     startDate: '2024-01-01',
+     *     endDate: '2024-03-31',
+     *     aggregatedBy: AggregatedByType::MONTH
+     * );
+     * 
+     * if (!$stats instanceof BaseErrorDTO) {
+     *     foreach ($stats->results as $result) {
+     *         echo "Opens: {$result->stats->opens}\n";
+     *         echo "Clicks: {$result->stats->clicks}\n";
+     *     }
+     * }
      */
     public function getAll(
         ?array $singleSendIds = null,
@@ -88,13 +166,33 @@ class Stats extends BaseEntity
     }
 
     /**
-     * @param string $singleSendId
-     * @param int|null $page_size
-     * @param string|null $page_token
-     * @param GroupByType[]|null $group_by
-     * @param string|null $ab_variation_id
-     * @param AbPhaseType|null $ab_phase_id
-     * @return LinkStatsListDTO|BaseErrorDTO
+     * Retrieves link click statistics for a specific campaign.
+     * 
+     * Returns click counts for each tracked link in the campaign. Useful for
+     * understanding which content/CTAs drive the most engagement.
+     * 
+     * Metrics per link:
+     * - Total clicks: All clicks on the link
+     * - Unique clicks: Number of unique recipients who clicked
+     * - Link URL: The actual URL being tracked
+     * 
+     * @param string $singleSendId The UUID of the campaign.
+     * @param int $pageSize Number of links per page. Default: 10.
+     * 
+     * @return LinkStatsListDTO|BaseErrorDTO Returns link statistics or error.
+     * 
+     * @see https://docs.sendgrid.com/api-reference/single-sends/get-single-send-link-stats
+     * 
+     * @example
+     * $linkStats = $entity->getLinkStats('campaign-uuid');
+     * 
+     * if (!$linkStats instanceof BaseErrorDTO) {
+     *     foreach ($linkStats->results as $link) {
+     *         echo "URL: {$link->url}\n";
+     *         echo "Total clicks: {$link->clicks}\n";
+     *         echo "Unique clicks: {$link->unique_clicks}\n\n";
+     *     }
+     * }
      */
     public function getLinkStats(
         string $singleSendId,
@@ -135,9 +233,12 @@ class Stats extends BaseEntity
     }
 
     /**
-     * @param string[] $singleSendIds
-     * @param string|null $timezone
-     * @return string|BaseErrorDTO
+     * Exports campaign statistics data in CSV format.
+     * @param string[] $singleSendIds Optional array of campaign IDs to include in the export. If null, exports all campaigns.
+     * @param string|null $timezone Optional timezone for date-based data in the export (e.g., 'UTC', 'America/New_York'). Defaults to UTC.
+     * @return string|BaseErrorDTO Returns CSV data as a string on success, or BaseErrorDTO on failure.
+      * 
+      * @see https://docs.sendgrid.com/api-reference/single-sends/export-single-send-stats
      */
     public function export(
         ?array $singleSendIds = null,

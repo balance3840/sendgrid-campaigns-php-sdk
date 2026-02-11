@@ -10,7 +10,19 @@ use SendgridCampaign\DTO\BaseListDto;
 use SendgridCampaign\DTO\MetadataDTO;
 use SendgridCampaign\Exceptions\MissingApiKeyException;
 
-class BaseEntity
+/**
+ * Base Entity Class for SendGrid API Interactions
+ * 
+ * This abstract class serves as the foundation for all SendGrid entity classes
+ * (Contact, ContactList, SingleSend, etc.). It provides common functionality
+ * including API client initialization and shared configuration.
+ * 
+ * All entity classes that interact with the SendGrid API should extend this class
+ * to ensure consistent API communication and error handling.
+ * 
+ * @package SendgridCampaign\Entities
+ */
+abstract class BaseEntity
 {
     public function __construct(
         protected ?string $apiKey = null,

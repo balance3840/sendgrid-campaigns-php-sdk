@@ -1,6 +1,6 @@
 {
     "name": "ramiroestrella/sendgrid-campaigns-sdk",
-    "description": "Sendgrid campaigns SDK",
+    "description": "A PHP SDK for managing SendGrid single send campaigns, including creation, scheduling, and analytics.",
     "type": "library",
     "license": "MIT",
     "autoload": {
